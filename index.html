@@ -1,0 +1,713 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fathir Rizwa — CI/CD Deployment Infrastructure</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-primary: #0a0c10;
+            --bg-surface: #11151c;
+            --bg-elevated: #171c26;
+            --text-primary: #e6edf3;
+            --text-secondary: #8b949e;
+            --text-muted: #586069;
+            --border-color: #21262d;
+            --border-strong: #30363d;
+            --accent: #2f81f7;
+            --accent-subtle: rgba(47, 129, 247, 0.12);
+            --green: #3fb950;
+            --green-subtle: rgba(63, 185, 80, 0.12);
+            --amber: #d29922;
+            --grid-dot: rgba(255, 255, 255, 0.05);
+        }
+
+        [data-theme="light"] {
+            --bg-primary: #fafbfc;
+            --bg-surface: #ffffff;
+            --bg-elevated: #f3f4f6;
+            --text-primary: #1f2328;
+            --text-secondary: #59636e;
+            --text-muted: #8c959f;
+            --border-color: #d0d7de;
+            --border-strong: #afb8c1;
+            --accent: #0969da;
+            --accent-subtle: rgba(9, 105, 218, 0.08);
+            --green: #1a7f37;
+            --green-subtle: rgba(26, 127, 55, 0.1);
+            --amber: #9a6700;
+            --grid-dot: rgba(0, 0, 0, 0.06);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background-color: var(--bg-primary);
+            background-image: radial-gradient(var(--grid-dot) 1px, transparent 1px);
+            background-size: 24px 24px;
+            color: var(--text-primary);
+            font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+            line-height: 1.6;
+            transition: background-color 0.25s ease, color 0.25s ease;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        code, pre, .mono {
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        .container {
+            max-width: 1080px;
+            margin: 0 auto;
+            padding: 0 24px;
+        }
+
+        /* Header / Topbar */
+        header {
+            border-bottom: 1px solid var(--border-color);
+            background-color: var(--bg-primary);
+            position: sticky;
+            top: 0;
+            z-index: 50;
+        }
+
+        .nav-inner {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            height: 64px;
+        }
+
+        .brand {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-size: 0.95rem;
+            font-weight: 600;
+            color: var(--text-primary);
+            text-decoration: none;
+        }
+
+        .brand-mark {
+            width: 28px;
+            height: 28px;
+            background: var(--bg-elevated);
+            border: 1px solid var(--border-strong);
+            border-radius: 6px;
+            display: grid;
+            place-items: center;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.8rem;
+            color: var(--accent);
+        }
+
+        .nav-meta {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+
+        .nim-tag {
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+            background: var(--bg-surface);
+            border: 1px solid var(--border-color);
+            padding: 4px 10px;
+            border-radius: 6px;
+        }
+
+        .theme-toggle {
+            background: var(--bg-surface);
+            border: 1px solid var(--border-color);
+            color: var(--text-secondary);
+            width: 34px;
+            height: 34px;
+            border-radius: 6px;
+            cursor: pointer;
+            display: grid;
+            place-items: center;
+            transition: border-color 0.2s, color 0.2s;
+        }
+
+        .theme-toggle:hover {
+            border-color: var(--border-strong);
+            color: var(--text-primary);
+        }
+
+        /* Hero Section - Asymmetric Layout */
+        .hero {
+            padding: 64px 0 48px;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .hero-grid {
+            display: grid;
+            grid-template-columns: 1.35fr 0.85fr;
+            gap: 48px;
+            align-items: center;
+        }
+
+        .status-line {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 0.8rem;
+            color: var(--green);
+            background: var(--green-subtle);
+            border: 1px solid rgba(63, 185, 80, 0.25);
+            padding: 4px 12px;
+            border-radius: 99px;
+            margin-bottom: 20px;
+            font-weight: 500;
+        }
+
+        .pulse-dot {
+            width: 7px;
+            height: 7px;
+            background-color: var(--green);
+            border-radius: 50%;
+            box-shadow: 0 0 0 3px rgba(63, 185, 80, 0.2);
+        }
+
+        h1 {
+            font-size: 2.5rem;
+            font-weight: 700;
+            letter-spacing: -0.03em;
+            line-height: 1.18;
+            margin-bottom: 16px;
+        }
+
+        .hero-desc {
+            color: var(--text-secondary);
+            font-size: 1.05rem;
+            margin-bottom: 28px;
+            max-width: 560px;
+        }
+
+        .hero-actions {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+
+        .btn-run {
+            background-color: var(--text-primary);
+            color: var(--bg-primary);
+            border: 1px solid var(--text-primary);
+            padding: 10px 20px;
+            border-radius: 6px;
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            font-size: 0.9rem;
+            font-weight: 600;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            transition: opacity 0.2s, transform 0.15s;
+        }
+
+        .btn-run:hover {
+            opacity: 0.9;
+        }
+
+        .btn-run:active {
+            transform: scale(0.98);
+        }
+
+        .btn-run:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .btn-secondary {
+            background: var(--bg-surface);
+            color: var(--text-primary);
+            border: 1px solid var(--border-color);
+            padding: 10px 16px;
+            border-radius: 6px;
+            font-size: 0.85rem;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            transition: border-color 0.2s;
+        }
+
+        .btn-secondary:hover {
+            border-color: var(--border-strong);
+        }
+
+        /* Server Spec Card */
+        .spec-panel {
+            background: var(--bg-surface);
+            border: 1px solid var(--border-color);
+            border-radius: 10px;
+            padding: 20px;
+        }
+
+        .spec-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding-bottom: 12px;
+            margin-bottom: 14px;
+            border-bottom: 1px solid var(--border-color);
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+        }
+
+        .spec-list {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            font-size: 0.85rem;
+        }
+
+        .spec-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .spec-key {
+            color: var(--text-secondary);
+        }
+
+        .spec-val {
+            color: var(--text-primary);
+            font-weight: 500;
+        }
+
+        /* Pipeline Architecture & Live Runner */
+        .workspace {
+            padding: 48px 0;
+        }
+
+        .section-label {
+            font-size: 0.78rem;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            color: var(--text-secondary);
+            margin-bottom: 8px;
+            font-weight: 600;
+        }
+
+        .section-title {
+            font-size: 1.4rem;
+            font-weight: 600;
+            letter-spacing: -0.02em;
+            margin-bottom: 24px;
+        }
+
+        /* Horizontal Pipeline Track */
+        .pipeline-track {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 16px;
+            margin-bottom: 24px;
+        }
+
+        .stage-card {
+            background: var(--bg-surface);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 18px;
+            position: relative;
+            transition: border-color 0.25s, background-color 0.25s;
+        }
+
+        .stage-card.running {
+            border-color: var(--amber);
+        }
+
+        .stage-card.done {
+            border-color: var(--green);
+        }
+
+        .stage-top {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+
+        .stage-num {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+        }
+
+        .stage-badge {
+            font-size: 0.72rem;
+            padding: 2px 8px;
+            border-radius: 4px;
+            background: var(--bg-elevated);
+            color: var(--text-secondary);
+            border: 1px solid var(--border-color);
+        }
+
+        .stage-card.running .stage-badge {
+            color: var(--amber);
+            border-color: rgba(210, 153, 34, 0.4);
+        }
+
+        .stage-card.done .stage-badge {
+            color: var(--green);
+            background: var(--green-subtle);
+            border-color: rgba(63, 185, 80, 0.3);
+        }
+
+        .stage-card h3 {
+            font-size: 1rem;
+            font-weight: 600;
+            margin-bottom: 4px;
+        }
+
+        .stage-card p {
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+        }
+
+        /* Terminal + YAML Split View */
+        .console-grid {
+            display: grid;
+            grid-template-columns: 1.25fr 0.75fr;
+            gap: 16px;
+        }
+
+        .window-box {
+            background: #0d1117;
+            border: 1px solid #21262d;
+            border-radius: 8px;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .window-bar {
+            background: #161b22;
+            padding: 10px 14px;
+            border-bottom: 1px solid #21262d;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 0.78rem;
+            color: #8b949e;
+        }
+
+        .dots {
+            display: flex;
+            gap: 6px;
+        }
+
+        .dots span {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background: #30363d;
+        }
+
+        .terminal-body {
+            padding: 16px;
+            font-size: 0.82rem;
+            color: #c9d1d9;
+            min-height: 210px;
+            max-height: 250px;
+            overflow-y: auto;
+            line-height: 1.7;
+        }
+
+        .log-line {
+            margin-bottom: 4px;
+        }
+
+        .log-time {
+            color: #6e7681;
+            margin-right: 8px;
+        }
+
+        .log-cmd {
+            color: #79c0ff;
+        }
+
+        .log-ok {
+            color: #3fb950;
+        }
+
+        .yaml-body {
+            padding: 16px;
+            font-size: 0.78rem;
+            color: #8b949e;
+            line-height: 1.65;
+            overflow-x: auto;
+        }
+
+        .yaml-k { color: #7ee787; }
+        .yaml-v { color: #a5d6ff; }
+
+        /* Footer */
+        footer {
+            border-top: 1px solid var(--border-color);
+            padding: 28px 0;
+            margin-top: 32px;
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+        }
+
+        .footer-inner {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 12px;
+        }
+
+        @media (max-width: 820px) {
+            .hero-grid,
+            .pipeline-track,
+            .console-grid {
+                grid-template-columns: 1fr;
+            }
+            h1 {
+                font-size: 2rem;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <div class="container nav-inner">
+            <a href="#" class="brand">
+                <span class="brand-mark">FR</span>
+                <span>Fathir Rizwa <span style="color: var(--text-muted); font-weight: 400;">/ deploy-pipeline</span></span>
+            </a>
+            <div class="nav-meta">
+                <span class="nim-tag mono">NIM 2404010025</span>
+                <button class="theme-toggle" onclick="toggleTheme()" id="themeBtn" title="Ganti Tema" aria-label="Ganti Tema">
+                    <svg id="iconSun" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"></circle><line x1="12" y1="1" x2="12" y2="3"></line><line x1="12" y1="21" x2="12" y2="23"></line><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line><line x1="1" y1="12" x2="3" y2="12"></line><line x1="21" y1="12" x2="23" y2="12"></line><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line></svg>
+                    <svg id="iconMoon" style="display:none;" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path></svg>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <main class="container">
+        <section class="hero">
+            <div class="hero-grid">
+                <div>
+                    <div class="status-line">
+                        <span class="pulse-dot"></span>
+                        <span>Production Node Active &bull; SGP1</span>
+                    </div>
+                    <h1>Zero-downtime deployment dari GitHub ke Ubuntu Droplet.</h1>
+                    <p class="hero-desc">
+                        Dokumentasi dan pembuktian alur <em>Continuous Deployment</em> yang dikelola oleh <strong>Fathir Rizwa</strong>. Setiap perubahan pada cabang <code>main</code> otomatis tervalidasi dan tersinkronisasi ke web server Nginx.
+                    </p>
+                    <div class="hero-actions">
+                        <button class="btn-run" id="runBtn" onclick="runDeployment()">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>
+                            Jalankan Simulasi Deploy
+                        </button>
+                        <span class="btn-secondary mono">branch: main</span>
+                    </div>
+                </div>
+
+                <div class="spec-panel">
+                    <div class="spec-header mono">
+                        <span>INSTANCE METADATA</span>
+                        <span style="color: var(--green);">HEALTHY</span>
+                    </div>
+                    <div class="spec-list">
+                        <div class="spec-row">
+                            <span class="spec-key">Maintainer</span>
+                            <span class="spec-val">Fathir Rizwa</span>
+                        </div>
+                        <div class="spec-row">
+                            <span class="spec-key">ID Mahasiswa</span>
+                            <span class="spec-val mono">2404010025</span>
+                        </div>
+                        <div class="spec-row">
+                            <span class="spec-key">Cloud Provider</span>
+                            <span class="spec-val">DigitalOcean Droplet</span>
+                        </div>
+                        <div class="spec-row">
+                            <span class="spec-key">OS & Web Server</span>
+                            <span class="spec-val mono">Ubuntu 24.04 / Nginx</span>
+                        </div>
+                        <div class="spec-row">
+                            <span class="spec-key">CI/CD Engine</span>
+                            <span class="spec-val mono">GitHub Actions</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section class="workspace">
+            <div class="section-label mono">01 // WORKFLOW EXECUTION</div>
+            <h2 class="section-title">Tahapan Otomatisasi Pipeline</h2>
+
+            <div class="pipeline-track">
+                <div class="stage-card" id="stage1">
+                    <div class="stage-top mono">
+                        <span class="stage-num">STEP 01</span>
+                        <span class="stage-badge" id="badge1">IDLE</span>
+                    </div>
+                    <h3>Source Push</h3>
+                    <p>Perubahan kode di-commit dari lokal dan dikirim ke repositori GitHub cabang <code>main</code>.</p>
+                </div>
+
+                <div class="stage-card" id="stage2">
+                    <div class="stage-top mono">
+                        <span class="stage-num">STEP 02</span>
+                        <span class="stage-badge" id="badge2">IDLE</span>
+                    </div>
+                    <h3>SSH Handshake & Sync</h3>
+                    <p>Runner GitHub Actions membuka koneksi SSH terenkripsi dan menyalin berkas produksi.</p>
+                </div>
+
+                <div class="stage-card" id="stage3">
+                    <div class="stage-top mono">
+                        <span class="stage-num">STEP 03</span>
+                        <span class="stage-badge" id="badge3">IDLE</span>
+                    </div>
+                    <h3>Nginx Reload</h3>
+                    <p>Server Ubuntu memperbarui direktori <code>/var/www/html</code> tanpa memutus koneksi aktif.</p>
+                </div>
+            </div>
+
+            <div class="console-grid">
+                <div class="window-box">
+                    <div class="window-bar mono">
+                        <div class="dots">
+                            <span></span><span></span><span></span>
+                        </div>
+                        <span>runner@github-actions: ~/deploy-log</span>
+                    </div>
+                    <div class="terminal-body mono" id="terminalOutput">
+                        <div class="log-line"><span class="log-time">[ready]</span> Menunggu trigger manual atau event push pada branch <span class="log-cmd">main</span>...</div>
+                    </div>
+                </div>
+
+                <div class="window-box">
+                    <div class="window-bar mono">
+                        <span>.github/workflows/deploy.yml</span>
+                        <span>YAML</span>
+                    </div>
+                    <pre class="yaml-body mono"><span class="yaml-k">name:</span> <span class="yaml-v">Deploy to Droplet</span>
+<span class="yaml-k">on:</span>
+  <span class="yaml-k">push:</span>
+    <span class="yaml-k">branches:</span> <span class="yaml-v">[ main ]</span>
+
+<span class="yaml-k">jobs:</span>
+  <span class="yaml-k">deploy:</span>
+    <span class="yaml-k">runs-on:</span> <span class="yaml-v">ubuntu-latest</span>
+    <span class="yaml-k">steps:</span>
+      - <span class="yaml-k">uses:</span> <span class="yaml-v">actions/checkout@v4</span>
+      - <span class="yaml-k">name:</span> <span class="yaml-v">Sync via SCP/SSH</span>
+        <span class="yaml-k">run:</span> <span class="yaml-v">rsync -avz ./ root@droplet:/var/www/html</span></pre>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <footer>
+        <div class="container footer-inner">
+            <div>Dikelola oleh <strong>Fathir Rizwa</strong> &mdash; NIM <span class="mono">2404010025</span></div>
+            <div class="mono" style="font-size: 0.8rem;">Build v1.2.0 &bull; Served via Nginx</div>
+        </div>
+    </footer>
+
+    <script>
+        // Toggle Theme dengan ikon SVG
+        function toggleTheme() {
+            const body = document.body;
+            const iconSun = document.getElementById('iconSun');
+            const iconMoon = document.getElementById('iconMoon');
+            
+            if (body.getAttribute('data-theme') === 'light') {
+                body.removeAttribute('data-theme');
+                iconSun.style.display = 'block';
+                iconMoon.style.display = 'none';
+            } else {
+                body.setAttribute('data-theme', 'light');
+                iconSun.style.display = 'none';
+                iconMoon.style.display = 'block';
+            }
+        }
+
+        function getTimeNow() {
+            const now = new Date();
+            return now.toTimeString().split(' ')[0];
+        }
+
+        function appendLog(text, type = '') {
+            const terminal = document.getElementById('terminalOutput');
+            const line = document.createElement('div');
+            line.className = 'log-line';
+            line.innerHTML = `<span class="log-time">[${getTimeNow()}]</span> <span class="${type}">${text}</span>`;
+            terminal.appendChild(line);
+            terminal.scrollTop = terminal.scrollHeight;
+        }
+
+        function setStageState(stepNum, state, label) {
+            const card = document.getElementById(`stage${stepNum}`);
+            const badge = document.getElementById(`badge${stepNum}`);
+            card.classList.remove('running', 'done');
+            if (state) card.classList.add(state);
+            badge.textContent = label;
+        }
+
+        // Simulasi Pipeline Realistis
+        function runDeployment() {
+            const btn = document.getElementById('runBtn');
+            const terminal = document.getElementById('terminalOutput');
+            
+            btn.disabled = true;
+            terminal.innerHTML = '';
+
+            [1, 2, 3].forEach(i => setStageState(i, '', 'QUEUED'));
+
+            // Step 1
+            setStageState(1, 'running', 'RUNNING');
+            appendLog('git push origin main (commit 8f4c21a by Fathir Rizwa)', 'log-cmd');
+
+            setTimeout(() => {
+                appendLog('Webhook diterima. Memulai workflow "Deploy to Droplet"...');
+                setStageState(1, 'done', 'PASSED');
+                setStageState(2, 'running', 'RUNNING');
+            }, 900);
+
+            // Step 2
+            setTimeout(() => {
+                appendLog('ssh -i ~/.ssh/do_key root@157.245.xxx.xxx "mkdir -p /var/www/html"', 'log-cmd');
+            }, 1700);
+
+            setTimeout(() => {
+                appendLog('rsync: mengirim index.html dan aset statis (14.2 KB)...');
+                setStageState(2, 'done', 'SYNCED');
+                setStageState(3, 'running', 'RUNNING');
+            }, 2600);
+
+            // Step 3
+            setTimeout(() => {
+                appendLog('sudo nginx -t && sudo systemctl reload nginx', 'log-cmd');
+            }, 3400);
+
+            setTimeout(() => {
+                setStageState(3, 'done', 'LIVE');
+                appendLog('Deployment selesai dalam 4.1s. HTTP/1.1 200 OK (NIM: 2404010025).', 'log-ok');
+                btn.disabled = false;
+            }, 4200);
+        }
+    </script>
+</body>
+</html>
